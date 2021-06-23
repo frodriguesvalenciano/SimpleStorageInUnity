@@ -1,17 +1,25 @@
+using System.Linq;
 using UnityEngine;
 
-public class StorageSingleton : MonoBehaviour
+public class StorageSingleton : MonoBehaviour, IStorage
 {
     private IStorage _storage;
-    // Start is called before the first frame update
 
-    void Start()
+    private void OnEnable()
     {
-        // Uncomment if you want the mock storage implementation
-        // _storage = new MockStorage();
-
-        // Storage based on PlayerPrefs
+        // Comment/Uncomment the one you want. Only one is allowed at a time.
+        //_storage = new MockStorage();
         _storage = new PlayerPrefsStorage();
+
+        InitialiseFromCache();
+    }
+
+    private static void InitialiseFromCache()
+    {
+        foreach (var cacheable in FindObjectsOfType<MonoBehaviour>().OfType<ICacheable>())
+        {
+            cacheable.LoadFromCache();
+        }
     }
 
     public T Load<T>(string key)
@@ -22,5 +30,24 @@ public class StorageSingleton : MonoBehaviour
     public void Save<T>(string key, T value)
     {
         _storage.Save<T>(key, value);
+    }
+
+    // Save everything to cache when the storage is disabled (e.g. we quit the game)
+    private void OnDisable()
+    {
+        SaveAllToCache();
+    }
+
+    private void OnApplicationQuit()
+    {
+        SaveAllToCache();
+    }
+
+    private void SaveAllToCache()
+    {
+        foreach (var cacheable in FindObjectsOfType<MonoBehaviour>().OfType<ICacheable>())
+        {
+            cacheable.SaveToCache();
+        }
     }
 }

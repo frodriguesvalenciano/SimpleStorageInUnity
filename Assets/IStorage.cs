@@ -1,5 +1,3 @@
-using System;
-
 public interface IStorage
 {
     public T Load<T>(string key);
